@@ -1,5 +1,5 @@
 #include "MPC.h"
-#include <cppad/cppad.h>
+#include <cppad/cppad.hpp>
 #include <math.h>
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
