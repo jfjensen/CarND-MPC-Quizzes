@@ -227,7 +227,7 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
 
   // Object that computes objective and constraints
   FG_eval fg_eval(coeffs);
-  std::cout << "coeffs after FG_eval: " << coeffs << std::endl;
+  // std::cout << "coeffs after FG_eval: " << coeffs << std::endl;
   // options
   std::string options;
   options += "Integer print_level  0\n";
@@ -249,12 +249,12 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   bool ok = true;
   ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
-  std::cout << "solution status: " << solution.status << std::endl;
-  std::cout << "solution size: " << solution.x.size() << std::endl;
+  // std::cout << "solution status: " << solution.status << std::endl;
+  // std::cout << "solution size: " << solution.x.size() << std::endl;
 
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
-  std::cout << "after cost " << std::endl;
+  // std::cout << "after cost " << std::endl;
   return {solution.x[x_start + 1],   solution.x[y_start + 1],
           solution.x[psi_start + 1], solution.x[v_start + 1],
           solution.x[cte_start + 1], solution.x[epsi_start + 1],
@@ -310,7 +310,7 @@ int main() {
   // TODO: fit a polynomial to the above x and y coordinates
   auto coeffs = polyfit(ptsx, ptsy, 1); // JFJ
 
-  std::cout << "coeffs: " << coeffs << std::endl;
+  // std::cout << "coeffs: " << coeffs << std::endl;
 
   // NOTE: free feel to play around with these
   double x = -1;
@@ -334,13 +334,13 @@ int main() {
   std::vector<double> delta_vals = {};
   std::vector<double> a_vals = {};
 
-   std::cout << "state: " << state << std::endl;
+   // std::cout << "state: " << state << std::endl;
 
   for (size_t i = 0; i < iters; i++) {
     std::cout << "Iteration " << i << std::endl;
 
     auto vars = mpc.Solve(state, coeffs);
-    std::cout << "after solve" << i << std::endl;    
+    // std::cout << "after solve" << i << std::endl;    
 
     x_vals.push_back(vars[0]);
     y_vals.push_back(vars[1]);
@@ -358,15 +358,15 @@ int main() {
   // Plot values
   // NOTE: feel free to play around with this.
   // It's useful for debugging!
-  plt::subplot(3, 1, 1);
-  plt::title("CTE");
-  plt::plot(cte_vals);
-  plt::subplot(3, 1, 2);
-  plt::title("Delta (Radians)");
-  plt::plot(delta_vals);
-  plt::subplot(3, 1, 3);
-  plt::title("Velocity");
-  plt::plot(v_vals);
-  plt::save("./plot.png");
+  // plt::subplot(3, 1, 1);
+  // plt::title("CTE");
+  // plt::plot(cte_vals);
+  // plt::subplot(3, 1, 2);
+  // plt::title("Delta (Radians)");
+  // plt::plot(delta_vals);
+  // plt::subplot(3, 1, 3);
+  // plt::title("Velocity");
+  // plt::plot(v_vals);
+  // plt::save("./plot.png");
   // plt::show();
 }
