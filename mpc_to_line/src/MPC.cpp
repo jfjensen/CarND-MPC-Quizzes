@@ -11,8 +11,8 @@ namespace plt = matplotlibcpp;
 using CppAD::AD;
 
 // TODO: Set N and dt
-size_t N = ? ;
-double dt = ? ;
+size_t N = 25; // JFJ
+double dt = 0.05; // JFJ
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -61,7 +61,23 @@ class FG_eval {
     // Reference State Cost
     // TODO: Define the cost related the reference state and
     // any anything you think may be beneficial.
+    for (int i = 0; i < N; i++) {
+      fg[0] += CppAD::pow(vars[cte_start + i] - ref_cte, 2);
+      fg[0] += CppAD::pow(vars[epsi_start + i] - ref_epsi, 2);
+      fg[0] += CppAD::pow(vars[v_start + i] - ref_v, 2);
+    }
 
+   
+    for (int i = 0; i < N - 1; i++) {
+      fg[0] += CppAD::pow(vars[delta_start + i], 2);
+      fg[0] += CppAD::pow(vars[a_start + i], 2);
+    }
+
+ 
+    for (int i = 0; i < N - 2; i++) {
+      fg[0] += CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+    }
     //
     // Setup Constraints
     //
@@ -81,11 +97,28 @@ class FG_eval {
 
     // The rest of the constraints
     for (int i = 0; i < N - 1; i++) {
+
       AD<double> x1 = vars[x_start + i + 1];
+      AD<double> y1 = vars[y_start + i + 1]; // JFJ
+      AD<double> psi1 = vars[psi_start + i + 1];
+      AD<double> v1 = vars[v_start + i + 1];
+      AD<double> cte1 = vars[cte_start + i + 1];
+      AD<double> epsi1 = vars[epsi_start + i + 1];
+  
 
       AD<double> x0 = vars[x_start + i];
+      AD<double> y0 = vars[y_start + i];// JFJ
       AD<double> psi0 = vars[psi_start + i];
       AD<double> v0 = vars[v_start + i];
+      AD<double> cte0 = vars[cte_start + i];
+      AD<double> epsi0 = vars[epsi_start + i];
+ 
+
+      AD<double> delta0 = vars[delta_start + i];
+      AD<double> a0 = vars[a_start + i];
+
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0;
+      AD<double> psides0 = CppAD::atan(coeffs[1]);
 
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
@@ -96,6 +129,11 @@ class FG_eval {
 
       // TODO: Setup the rest of the model constraints
       fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+      fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
+      fg[2 + psi_start + i] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+      fg[2 + v_start + i] = v1 - (v0 + a0 * dt);
+      fg[2 + cte_start + i] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+      fg[2 + epsi_start + i] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
     }
   }
 };
@@ -189,7 +227,7 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
 
   // Object that computes objective and constraints
   FG_eval fg_eval(coeffs);
-
+  std::cout << "coeffs after FG_eval: " << coeffs << std::endl;
   // options
   std::string options;
   options += "Integer print_level  0\n";
@@ -211,8 +249,12 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   bool ok = true;
   ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
+  std::cout << "solution status: " << solution.status << std::endl;
+  std::cout << "solution size: " << solution.x.size() << std::endl;
+
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
+  std::cout << "after cost " << std::endl;
   return {solution.x[x_start + 1],   solution.x[y_start + 1],
           solution.x[psi_start + 1], solution.x[v_start + 1],
           solution.x[cte_start + 1], solution.x[epsi_start + 1],
@@ -266,7 +308,9 @@ int main() {
   ptsy << -1, -1;
 
   // TODO: fit a polynomial to the above x and y coordinates
-  auto coeffs = ? ;
+  auto coeffs = polyfit(ptsx, ptsy, 1); // JFJ
+
+  std::cout << "coeffs: " << coeffs << std::endl;
 
   // NOTE: free feel to play around with these
   double x = -1;
@@ -274,9 +318,9 @@ int main() {
   double psi = 0;
   double v = 10;
   // TODO: calculate the cross track error
-  double cte = ? ;
+  double cte = polyeval(coeffs,0.0) - y;
   // TODO: calculate the orientation error
-  double epsi = ? ;
+  double epsi = -atan(coeffs[1]);
 
   Eigen::VectorXd state(6);
   state << x, y, psi, v, cte, epsi;
@@ -290,10 +334,13 @@ int main() {
   std::vector<double> delta_vals = {};
   std::vector<double> a_vals = {};
 
+   std::cout << "state: " << state << std::endl;
+
   for (size_t i = 0; i < iters; i++) {
     std::cout << "Iteration " << i << std::endl;
 
     auto vars = mpc.Solve(state, coeffs);
+    std::cout << "after solve" << i << std::endl;    
 
     x_vals.push_back(vars[0]);
     y_vals.push_back(vars[1]);
@@ -320,6 +367,6 @@ int main() {
   plt::subplot(3, 1, 3);
   plt::title("Velocity");
   plt::plot(v_vals);
-
-  plt::show();
+  plt::save("./plot.png");
+  // plt::show();
 }

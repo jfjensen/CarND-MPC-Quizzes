@@ -15,6 +15,10 @@ To do a quiz:
 
 A solution for each quiz is presented in the solution directory.
 
+## Docker
+
+docker build -t mpcq .
+
 ## Dependencies
 
 The *Global Kinematic Quiz* and *Polynomial Fitting* quizzes have all the dependencies in repo. For the *MPC* quiz
