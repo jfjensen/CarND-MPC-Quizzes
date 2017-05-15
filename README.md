@@ -15,9 +15,11 @@ To do a quiz:
 
 A solution for each quiz is presented in the solution directory.
 
-## Docker
+## Docker on Windows 10
 
-docker build -t mpcq .
+[start xming]
+`docker build -t mpcq .`
+`docker run -e DISPLAY=192.168.1.3:0.0 -it mpcq ./build/q1`
 
 ## Dependencies
 
